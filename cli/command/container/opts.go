@@ -100,6 +100,7 @@ type containerOptions struct {
 	ipv6Address        string
 	ipcMode            string
 	pidsLimit          int64
+	gpus               opts.ListOpts
 	restartPolicy      string
 	readonlyRootfs     bool
 	loggingDriver      string
@@ -145,6 +146,7 @@ func addFlags(flags *pflag.FlagSet) *containerOptions {
 		expose:            opts.NewListOpts(nil),
 		extraHosts:        opts.NewListOpts(opts.ValidateExtraHost),
 		groupAdd:          opts.NewListOpts(nil),
+		gpus:              opts.NewListOpts(nil),
 		labels:            opts.NewListOpts(nil),
 		labelsFile:        opts.NewListOpts(nil),
 		linkLocalIPs:      opts.NewListOpts(nil),
@@ -271,6 +273,7 @@ func addFlags(flags *pflag.FlagSet) *containerOptions {
 	flags.BoolVar(&copts.oomKillDisable, "oom-kill-disable", false, "Disable OOM Killer")
 	flags.IntVar(&copts.oomScoreAdj, "oom-score-adj", 0, "Tune host's OOM preferences (-1000 to 1000)")
 	flags.Int64Var(&copts.pidsLimit, "pids-limit", 0, "Tune container pids limit (set -1 for unlimited)")
+	flags.Var(&copts.gpus, "gpu", "The GPU device IDs to add to the container, 'all' to add all of them")
 
 	// Low-level execution (cgroups, namespaces, ...)
 	flags.StringVar(&copts.cgroupParent, "cgroup-parent", "", "Optional parent cgroup for the container")
@@ -574,6 +577,16 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 		config.StopTimeout = &copts.stopTimeout
 	}
 
+	// Gpus
+	gpuDeviceIds, useAllGpus, err := parseGpus(copts.gpus.GetAll())
+	if err != nil {
+		return nil, err
+	}
+	gpuConfig := container.GpuConfig{
+		Devices: gpuDeviceIds,
+		All:     useAllGpus,
+	}
+
 	hostConfig := &container.HostConfig{
 		Binds:           binds,
 		ContainerIDFile: copts.containerIDFile,
@@ -613,6 +626,7 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 		Tmpfs:          tmpfs,
 		Sysctls:        copts.sysctls.GetAll(),
 		Runtime:        copts.runtime,
+		GpuConfig:      gpuConfig,
 		Mounts:         mounts,
 	}
 
@@ -674,6 +688,32 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 		HostConfig:       hostConfig,
 		NetworkingConfig: networkingConfig,
 	}, nil
+}
+
+func parseGpus(inputs []string) ([]int, bool, error) {
+	ids := make([]int, len(inputs))
+
+	for i, input := range inputs {
+		if input == "all" {
+			if len(inputs) == 1 {
+				return nil, true, nil
+			} else {
+				return nil, false, errors.New("Passing both 'all' and device IDs to --gpus is not allowed")
+			}
+		}
+
+		if id, err := strconv.ParseInt(input, 10, 0); err == nil {
+			if id >= 0 {
+				ids[i] = int(id)
+			} else {
+				return nil, false, errors.New("GPU device IDs must be positive integers")
+			}
+		} else {
+			return nil, false, err
+		}
+	}
+
+	return ids, false, nil
 }
 
 func parsePortOpts(publishOpts []string) ([]string, error) {
