@@ -578,13 +578,14 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 	}
 
 	// Gpus
-	gpuDeviceIds, useAllGpus, err := parseGpus(copts.gpus.GetAll())
+	gpuDeviceUUIDs, gpuDeviceIds, useAllGpus, err := parseGpus(copts.gpus.GetAll())
 	if err != nil {
 		return nil, err
 	}
 	gpuConfig := container.GpuConfig{
-		Devices: gpuDeviceIds,
-		All:     useAllGpus,
+		DeviceUUIDs: gpuDeviceUUIDs,
+		Devices:     gpuDeviceIds,
+		All:         useAllGpus,
 	}
 
 	hostConfig := &container.HostConfig{
@@ -690,30 +691,31 @@ func parse(flags *pflag.FlagSet, copts *containerOptions) (*containerConfig, err
 	}, nil
 }
 
-func parseGpus(inputs []string) ([]int, bool, error) {
-	ids := make([]int, len(inputs))
+func parseGpus(inputs []string) ([]string, []int, bool, error) {
+	uuids := make([]string, 0)
+	ids := make([]int, 0)
 
-	for i, input := range inputs {
+	for _, input := range inputs {
 		if input == "all" {
 			if len(inputs) == 1 {
-				return nil, true, nil
+				return nil, nil, true, nil
 			} else {
-				return nil, false, errors.New("Passing both 'all' and device IDs to --gpus is not allowed")
+				return nil, nil, false, errors.New("Passing both 'all' and device IDs to --gpus is not allowed")
 			}
 		}
 
 		if id, err := strconv.ParseInt(input, 10, 0); err == nil {
 			if id >= 0 {
-				ids[i] = int(id)
+				ids = append(ids, int(id))
 			} else {
-				return nil, false, errors.New("GPU device IDs must be positive integers")
+				return nil, nil, false, errors.New("GPU device IDs must be positive integers")
 			}
 		} else {
-			return nil, false, err
+			uuids = append(uuids, input)
 		}
 	}
 
-	return ids, false, nil
+	return uuids, ids, false, nil
 }
 
 func parsePortOpts(publishOpts []string) ([]string, error) {

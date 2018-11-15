@@ -352,6 +352,7 @@ type UpdateConfig struct {
 }
 
 type GpuConfig struct {
+	DeviceUUIDs []string // takes precedence over int IDs, if given
 	Devices []int // the list of device IDs
 	All     bool  // if true, then `devices` is ignored and all GPUs are added to the container
 }
