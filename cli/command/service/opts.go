@@ -255,6 +255,9 @@ func (r *resourceOptions) ToResourceRequirements(flags *pflag.FlagSet) (*swarm.R
 	if flags.Changed(flagSwapBytes) {
 		reqs.SwapBytes = &r.swapBytes
 	}
+	if flags.Changed(flagMemorySwappiness) {
+		reqs.MemorySwappiness = &r.memorySwappiness
+	}
 
 	var msg string
 	if reqs.SwapBytes == nil {
@@ -262,6 +265,13 @@ func (r *resourceOptions) ToResourceRequirements(flags *pflag.FlagSet) (*swarm.R
 	} else {
 		msg = fmt.Sprintf("swap bytes = %v", *reqs.SwapBytes)
 	}
+	msg += " and "
+	if reqs.MemorySwappiness == nil {
+		msg += "swappiness nil"
+	} else {
+		msg += fmt.Sprintf("swappiness = %v", *reqs.MemorySwappiness)
+	}
+
 	panic(msg)
 
 	return reqs, nil
@@ -764,7 +774,9 @@ func addServiceFlags(flags *pflag.FlagSet, opts *serviceOptions, defaultFlagValu
 	flags.Var(&opts.resources.resCPU, flagReserveCPU, "Reserve CPUs")
 	flags.Var(&opts.resources.resMemBytes, flagReserveMemory, "Reserve Memory")
 	flags.Int64Var(&opts.resources.swapBytes, flagSwapBytes, 0, "Amount of swap in bytes - can only be used together with a memory limit. Set to -1 to enable unlimited swap. The default behaviour is to make the swap space twice as big as the memory limit.")
-	//flags.Var(&opts.resources.swapBytes, flagSwapBytes,  "Amount of swap in bytes - can only be used together with a memory limit. Set to -1 to enable unlimited swap. The default behaviour is to make the swap space twice as big as the memory limit.")
+	// TODO wkpo
+	//flags.SetAnnotation(flagSwapBytes, "version", []string{"1.40"})
+	flags.Int64Var(&opts.resources.memorySwappiness, flagMemorySwappiness, 0, "Tune container memory swappiness (0 to 100) - if not specified, defaults to the container OS's default, generally 60")
 	// TODO wkpo
 	//flags.SetAnnotation(flagSwapBytes, "version", []string{"1.40"})
 
@@ -833,10 +845,6 @@ func addServiceFlags(flags *pflag.FlagSet, opts *serviceOptions, defaultFlagValu
 	flags.SetAnnotation(flagStopSignal, "version", []string{"1.28"})
 	flags.StringVar(&opts.isolation, flagIsolation, "", "Service container isolation mode")
 	flags.SetAnnotation(flagIsolation, "version", []string{"1.35"})
-
-	//flags.Int64Var(opts.swapBytes, flagSwapBytes, nil, "")
-	// TODO wkpo
-	flags.SetAnnotation(flagMemorySwappiness, "version", []string{"1.40"})
 }
 
 const (
