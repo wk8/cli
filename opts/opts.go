@@ -518,10 +518,11 @@ type NullableInt64 struct {
 func (ni *NullableInt64) Set(value string) error {
 	i, err := strconv.ParseInt(value, 0, 64)
 	if err != nil {
-		ni.value = i
-		ni.set = true
+		return fmt.Errorf("not an int64: %s", value)
 	}
-	return err
+	ni.value = i
+	ni.set = true
+	return nil
 }
 
 func (ni *NullableInt64) String() string {
@@ -530,4 +531,12 @@ func (ni *NullableInt64) String() string {
 
 func (*NullableInt64) Type() string {
 	return "int64"
+}
+
+func (ni *NullableInt64) IsNull() bool {
+	return !ni.set
+}
+
+func (ni *NullableInt64) Value() int64 {
+	return ni.value
 }

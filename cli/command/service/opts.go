@@ -238,7 +238,7 @@ func (r *resourceOptions) ToResourceRequirements() (*swarm.ResourceRequirements,
 		return nil, err
 	}
 
-	wkpo := &swarm.ResourceRequirements{
+	reqs := &swarm.ResourceRequirements{
 		Limits: &swarm.Resources{
 			NanoCPUs:    r.limitCPU.Value(),
 			MemoryBytes: r.limitMemBytes.Value(),
@@ -250,9 +250,20 @@ func (r *resourceOptions) ToResourceRequirements() (*swarm.ResourceRequirements,
 		},
 	}
 
-	panic(fmt.Errorf("wkpo %#v", wkpo.Limits))
+	if !r.swapBytes.IsNull() {
+		swapBytes := r.swapBytes.Value()
+		reqs.SwapBytes = &swapBytes
+	}
 
-	return wkpo, nil
+	var msg string
+	if reqs.SwapBytes == nil {
+		msg = "swap bytes nil"
+	} else {
+		msg = fmt.Sprintf("swap bytes = %v", *reqs.SwapBytes)
+	}
+	panic(msg)
+
+	return reqs, nil
 }
 
 type restartPolicyOptions struct {
@@ -751,7 +762,8 @@ func addServiceFlags(flags *pflag.FlagSet, opts *serviceOptions, defaultFlagValu
 	flags.Var(&opts.resources.resCPU, flagReserveCPU, "Reserve CPUs")
 	flags.Var(&opts.resources.resMemBytes, flagReserveMemory, "Reserve Memory")
 	flags.Var(&opts.resources.swapBytes, flagSwapBytes, "Amount of swap in bytes - can only be used together with a memory limit. Set to -1 to enable unlimited swap. The default behaviour is to make the swap space twice as big as the memory limit.")
-	flags.SetAnnotation(flagSwapBytes, "version", []string{"1.40"})
+	// TODO wkpo
+	//flags.SetAnnotation(flagSwapBytes, "version", []string{"1.40"})
 
 	flags.Var(&opts.stopGrace, flagStopGracePeriod, flagDesc(flagStopGracePeriod, "Time to wait before force killing a container (ns|us|ms|s|m|h)"))
 	flags.Var(&opts.replicas, flagReplicas, "Number of tasks")
