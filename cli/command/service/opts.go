@@ -26,6 +26,7 @@ type int64Value interface {
 	Value() int64
 }
 
+// TODO wkpo c pas exactement ce qu'on veut ca??
 // Uint64Opt represents a uint64.
 type Uint64Opt struct {
 	value *uint64
@@ -227,12 +228,13 @@ type resourceOptions struct {
 	limitMemBytes       opts.MemBytes
 	resCPU              opts.NanoCPUs
 	resMemBytes         opts.MemBytes
-	swapBytes           opts.NullableInt64
-	memorySwappiness    opts.NullableInt64
+	swapBytes           int64
+	memorySwappiness    int64
 	resGenericResources []string
 }
 
-func (r *resourceOptions) ToResourceRequirements() (*swarm.ResourceRequirements, error) {
+// TODO wkpo update tests
+func (r *resourceOptions) ToResourceRequirements(flags *pflag.FlagSet) (*swarm.ResourceRequirements, error) {
 	generic, err := ParseGenericResources(r.resGenericResources)
 	if err != nil {
 		return nil, err
@@ -250,9 +252,8 @@ func (r *resourceOptions) ToResourceRequirements() (*swarm.ResourceRequirements,
 		},
 	}
 
-	if !r.swapBytes.IsNull() {
-		swapBytes := r.swapBytes.Value()
-		reqs.SwapBytes = &swapBytes
+	if flags.Changed(flagSwapBytes) {
+		reqs.SwapBytes = &r.swapBytes
 	}
 
 	var msg string
@@ -329,6 +330,7 @@ func (r *restartPolicyOptions) ToRestartPolicy(flags *pflag.FlagSet) *swarm.Rest
 	if flags.Changed(flagRestartCondition) {
 		restartPolicy.Condition = swarm.RestartPolicyCondition(r.condition)
 	}
+	// TODO wkpo ooops....
 	if flags.Changed(flagRestartMaxAttempts) {
 		restartPolicy.MaxAttempts = r.maxAttempts.Value()
 	}
@@ -620,7 +622,7 @@ func (options *serviceOptions) ToService(ctx context.Context, apiClient client.N
 		return networks[i].Target < networks[j].Target
 	})
 
-	resources, err := options.resources.ToResourceRequirements()
+	resources, err := options.resources.ToResourceRequirements(flags)
 	if err != nil {
 		return service, err
 	}
@@ -761,7 +763,8 @@ func addServiceFlags(flags *pflag.FlagSet, opts *serviceOptions, defaultFlagValu
 	flags.Var(&opts.resources.limitMemBytes, flagLimitMemory, "Limit Memory")
 	flags.Var(&opts.resources.resCPU, flagReserveCPU, "Reserve CPUs")
 	flags.Var(&opts.resources.resMemBytes, flagReserveMemory, "Reserve Memory")
-	flags.Var(&opts.resources.swapBytes, flagSwapBytes, "Amount of swap in bytes - can only be used together with a memory limit. Set to -1 to enable unlimited swap. The default behaviour is to make the swap space twice as big as the memory limit.")
+	flags.Int64Var(&opts.resources.swapBytes, flagSwapBytes, 0, "Amount of swap in bytes - can only be used together with a memory limit. Set to -1 to enable unlimited swap. The default behaviour is to make the swap space twice as big as the memory limit.")
+	//flags.Var(&opts.resources.swapBytes, flagSwapBytes,  "Amount of swap in bytes - can only be used together with a memory limit. Set to -1 to enable unlimited swap. The default behaviour is to make the swap space twice as big as the memory limit.")
 	// TODO wkpo
 	//flags.SetAnnotation(flagSwapBytes, "version", []string{"1.40"})
 
