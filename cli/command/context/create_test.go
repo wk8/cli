@@ -75,31 +75,31 @@ func TestCreateInvalids(t *testing.T) {
 		},
 		{
 			options: CreateOptions{
-				Name:                     "invalid-orchestrator",
+				Name: "invalid-orchestrator",
 				DefaultStackOrchestrator: "invalid",
 			},
 			expecterErr: `specified orchestrator "invalid" is invalid, please use either kubernetes, swarm or all`,
 		},
 		{
 			options: CreateOptions{
-				Name:                     "orchestrator-swarm-no-endpoint",
+				Name: "orchestrator-swarm-no-endpoint",
 				DefaultStackOrchestrator: "swarm",
 			},
 			expecterErr: `docker endpoint configuration is required`,
 		},
 		{
 			options: CreateOptions{
-				Name:                     "orchestrator-kubernetes-no-endpoint",
+				Name: "orchestrator-kubernetes-no-endpoint",
 				DefaultStackOrchestrator: "kubernetes",
-				Docker:                   map[string]string{},
+				Docker: map[string]string{},
 			},
 			expecterErr: `cannot specify orchestrator "kubernetes" without configuring a Kubernetes endpoint`,
 		},
 		{
 			options: CreateOptions{
-				Name:                     "orchestrator-all-no-endpoint",
+				Name: "orchestrator-all-no-endpoint",
 				DefaultStackOrchestrator: "all",
-				Docker:                   map[string]string{},
+				Docker: map[string]string{},
 			},
 			expecterErr: `cannot specify orchestrator "all" without configuring a Kubernetes endpoint`,
 		},
@@ -118,9 +118,9 @@ func TestCreateOrchestratorSwarm(t *testing.T) {
 	defer cleanup()
 
 	err := RunCreate(cli, &CreateOptions{
-		Name:                     "test",
+		Name: "test",
 		DefaultStackOrchestrator: "swarm",
-		Docker:                   map[string]string{},
+		Docker: map[string]string{},
 	})
 	assert.NilError(t, err)
 	assert.Equal(t, "test\n", cli.OutBuffer().String())
@@ -157,7 +157,7 @@ func createTestContextWithKube(t *testing.T, cli command.Cli) {
 	defer revert()
 
 	err := RunCreate(cli, &CreateOptions{
-		Name:                     "test",
+		Name: "test",
 		DefaultStackOrchestrator: "all",
 		Kubernetes: map[string]string{
 			keyFromCurrent: "true",

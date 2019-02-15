@@ -6,6 +6,7 @@ import (
 	"net"
 	"path"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/docker/docker/api/types/filters"
@@ -506,4 +507,27 @@ func (m *MemSwapBytes) String() string {
 func (m *MemSwapBytes) UnmarshalJSON(s []byte) error {
 	b := MemBytes(*m)
 	return b.UnmarshalJSON(s)
+}
+
+// TODO wkpo comment
+type NullableInt64 struct {
+	set   bool
+	value int64
+}
+
+func (ni *NullableInt64) Set(value string) error {
+	i, err := strconv.ParseInt(value, 0, 64)
+	if err != nil {
+		ni.value = i
+		ni.set = true
+	}
+	return err
+}
+
+func (ni *NullableInt64) String() string {
+	return strconv.FormatInt(ni.value, 10)
+}
+
+func (*NullableInt64) Type() string {
+	return "int64"
 }

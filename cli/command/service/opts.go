@@ -227,6 +227,8 @@ type resourceOptions struct {
 	limitMemBytes       opts.MemBytes
 	resCPU              opts.NanoCPUs
 	resMemBytes         opts.MemBytes
+	swapBytes           opts.NullableInt64
+	memorySwappiness    opts.NullableInt64
 	resGenericResources []string
 }
 
@@ -236,7 +238,7 @@ func (r *resourceOptions) ToResourceRequirements() (*swarm.ResourceRequirements,
 		return nil, err
 	}
 
-	return &swarm.ResourceRequirements{
+	wkpo := &swarm.ResourceRequirements{
 		Limits: &swarm.Resources{
 			NanoCPUs:    r.limitCPU.Value(),
 			MemoryBytes: r.limitMemBytes.Value(),
@@ -246,7 +248,11 @@ func (r *resourceOptions) ToResourceRequirements() (*swarm.ResourceRequirements,
 			MemoryBytes:      r.resMemBytes.Value(),
 			GenericResources: generic,
 		},
-	}, nil
+	}
+
+	panic(fmt.Errorf("wkpo %#v", wkpo.Limits))
+
+	return wkpo, nil
 }
 
 type restartPolicyOptions struct {
@@ -744,6 +750,8 @@ func addServiceFlags(flags *pflag.FlagSet, opts *serviceOptions, defaultFlagValu
 	flags.Var(&opts.resources.limitMemBytes, flagLimitMemory, "Limit Memory")
 	flags.Var(&opts.resources.resCPU, flagReserveCPU, "Reserve CPUs")
 	flags.Var(&opts.resources.resMemBytes, flagReserveMemory, "Reserve Memory")
+	flags.Var(&opts.resources.swapBytes, flagSwapBytes, "Amount of swap in bytes - can only be used together with a memory limit. Set to -1 to enable unlimited swap. The default behaviour is to make the swap space twice as big as the memory limit.")
+	flags.SetAnnotation(flagSwapBytes, "version", []string{"1.40"})
 
 	flags.Var(&opts.stopGrace, flagStopGracePeriod, flagDesc(flagStopGracePeriod, "Time to wait before force killing a container (ns|us|ms|s|m|h)"))
 	flags.Var(&opts.replicas, flagReplicas, "Number of tasks")
@@ -810,6 +818,10 @@ func addServiceFlags(flags *pflag.FlagSet, opts *serviceOptions, defaultFlagValu
 	flags.SetAnnotation(flagStopSignal, "version", []string{"1.28"})
 	flags.StringVar(&opts.isolation, flagIsolation, "", "Service container isolation mode")
 	flags.SetAnnotation(flagIsolation, "version", []string{"1.35"})
+
+	//flags.Int64Var(opts.swapBytes, flagSwapBytes, nil, "")
+	// TODO wkpo
+	flags.SetAnnotation(flagMemorySwappiness, "version", []string{"1.40"})
 }
 
 const (
@@ -909,6 +921,8 @@ const (
 	flagConfigAdd               = "config-add"
 	flagConfigRemove            = "config-rm"
 	flagIsolation               = "isolation"
+	flagSwapBytes               = "swap-bytes"
+	flagMemorySwappiness        = "memory-swappiness"
 )
 
 func validateAPIVersion(c swarm.ServiceSpec, serverAPIVersion string) error {
