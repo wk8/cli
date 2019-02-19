@@ -227,16 +227,18 @@ type resourceOptions struct {
 	limitMemBytes       opts.MemBytes
 	resCPU              opts.NanoCPUs
 	resMemBytes         opts.MemBytes
+	swapBytes           int64
+	memorySwappiness    int64
 	resGenericResources []string
 }
 
-func (r *resourceOptions) ToResourceRequirements() (*swarm.ResourceRequirements, error) {
+func (r *resourceOptions) ToResourceRequirements(flags *pflag.FlagSet) (*swarm.ResourceRequirements, error) {
 	generic, err := ParseGenericResources(r.resGenericResources)
 	if err != nil {
 		return nil, err
 	}
 
-	return &swarm.ResourceRequirements{
+	reqs := &swarm.ResourceRequirements{
 		Limits: &swarm.Resources{
 			NanoCPUs:    r.limitCPU.Value(),
 			MemoryBytes: r.limitMemBytes.Value(),
@@ -246,7 +248,16 @@ func (r *resourceOptions) ToResourceRequirements() (*swarm.ResourceRequirements,
 			MemoryBytes:      r.resMemBytes.Value(),
 			GenericResources: generic,
 		},
-	}, nil
+	}
+
+	if flags.Changed(flagSwapBytes) {
+		reqs.SwapBytes = &r.swapBytes
+	}
+	if flags.Changed(flagMemorySwappiness) {
+		reqs.MemorySwappiness = &r.memorySwappiness
+	}
+
+	return reqs, nil
 }
 
 type restartPolicyOptions struct {
@@ -603,7 +614,7 @@ func (options *serviceOptions) ToService(ctx context.Context, apiClient client.N
 		return networks[i].Target < networks[j].Target
 	})
 
-	resources, err := options.resources.ToResourceRequirements()
+	resources, err := options.resources.ToResourceRequirements(flags)
 	if err != nil {
 		return service, err
 	}
@@ -744,6 +755,12 @@ func addServiceFlags(flags *pflag.FlagSet, opts *serviceOptions, defaultFlagValu
 	flags.Var(&opts.resources.limitMemBytes, flagLimitMemory, "Limit Memory")
 	flags.Var(&opts.resources.resCPU, flagReserveCPU, "Reserve CPUs")
 	flags.Var(&opts.resources.resMemBytes, flagReserveMemory, "Reserve Memory")
+	flags.Int64Var(&opts.resources.swapBytes, flagSwapBytes, 0, "Amount of swap in bytes - can only be used together with a memory limit. Set to -1 to enable unlimited swap. The default behaviour is to make the swap space twice as big as the memory limit.")
+	// FIXME: uncomment when/if https://github.com/moby/moby/pull/37872 gets merged
+	//flags.SetAnnotation(flagSwapBytes, "version", []string{"1.40"})
+	flags.Int64Var(&opts.resources.memorySwappiness, flagMemorySwappiness, 0, "Tune container memory swappiness (0 to 100) - if not specified, defaults to the container OS's default, generally 60")
+	// FIXME: uncomment when/if https://github.com/moby/moby/pull/37872 gets merged
+	//flags.SetAnnotation(flagSwapBytes, "version", []string{"1.40"})
 
 	flags.Var(&opts.stopGrace, flagStopGracePeriod, flagDesc(flagStopGracePeriod, "Time to wait before force killing a container (ns|us|ms|s|m|h)"))
 	flags.Var(&opts.replicas, flagReplicas, "Number of tasks")
@@ -909,6 +926,8 @@ const (
 	flagConfigAdd               = "config-add"
 	flagConfigRemove            = "config-rm"
 	flagIsolation               = "isolation"
+	flagSwapBytes               = "swap-bytes"
+	flagMemorySwappiness        = "memory-swappiness"
 )
 
 func validateAPIVersion(c swarm.ServiceSpec, serverAPIVersion string) error {
