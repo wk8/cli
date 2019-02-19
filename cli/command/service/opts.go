@@ -26,7 +26,6 @@ type int64Value interface {
 	Value() int64
 }
 
-// TODO wkpo c pas exactement ce qu'on veut ca??
 // Uint64Opt represents a uint64.
 type Uint64Opt struct {
 	value *uint64
@@ -233,7 +232,6 @@ type resourceOptions struct {
 	resGenericResources []string
 }
 
-// TODO wkpo update tests
 func (r *resourceOptions) ToResourceRequirements(flags *pflag.FlagSet) (*swarm.ResourceRequirements, error) {
 	generic, err := ParseGenericResources(r.resGenericResources)
 	if err != nil {
@@ -258,21 +256,6 @@ func (r *resourceOptions) ToResourceRequirements(flags *pflag.FlagSet) (*swarm.R
 	if flags.Changed(flagMemorySwappiness) {
 		reqs.MemorySwappiness = &r.memorySwappiness
 	}
-
-	var msg string
-	if reqs.SwapBytes == nil {
-		msg = "swap bytes nil"
-	} else {
-		msg = fmt.Sprintf("swap bytes = %v", *reqs.SwapBytes)
-	}
-	msg += " and "
-	if reqs.MemorySwappiness == nil {
-		msg += "swappiness nil"
-	} else {
-		msg += fmt.Sprintf("swappiness = %v", *reqs.MemorySwappiness)
-	}
-
-	panic(msg)
 
 	return reqs, nil
 }
@@ -340,7 +323,6 @@ func (r *restartPolicyOptions) ToRestartPolicy(flags *pflag.FlagSet) *swarm.Rest
 	if flags.Changed(flagRestartCondition) {
 		restartPolicy.Condition = swarm.RestartPolicyCondition(r.condition)
 	}
-	// TODO wkpo ooops....
 	if flags.Changed(flagRestartMaxAttempts) {
 		restartPolicy.MaxAttempts = r.maxAttempts.Value()
 	}

@@ -91,7 +91,9 @@ func TestHealthCheckOptionsToHealthConfigConflict(t *testing.T) {
 	assert.Error(t, err, "--no-healthcheck conflicts with --health-* options")
 }
 
-func TestResourceOptionsToResourceRequirements(t *testing.T) {
+func TestResourceOptionsToResourceRequirementsWithGenericResources(t *testing.T) {
+	flags := newCreateCommand(nil).Flags()
+
 	incorrectOptions := []resourceOptions{
 		{
 			resGenericResources: []string{"foo=bar", "foo=1"},
@@ -108,7 +110,7 @@ func TestResourceOptionsToResourceRequirements(t *testing.T) {
 	}
 
 	for _, opt := range incorrectOptions {
-		_, err := opt.ToResourceRequirements()
+		_, err := opt.ToResourceRequirements(flags)
 		assert.Check(t, is.ErrorContains(err, ""))
 	}
 
@@ -122,7 +124,7 @@ func TestResourceOptionsToResourceRequirements(t *testing.T) {
 	}
 
 	for _, opt := range correctOptions {
-		r, err := opt.ToResourceRequirements()
+		r, err := opt.ToResourceRequirements(flags)
 		assert.NilError(t, err)
 		assert.Check(t, is.Len(r.Reservations.GenericResources, len(opt.resGenericResources)))
 	}
