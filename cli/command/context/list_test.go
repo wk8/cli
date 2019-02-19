@@ -15,7 +15,7 @@ func createTestContextWithKubeAndSwarm(t *testing.T, cli command.Cli, name strin
 	defer revert()
 
 	err := RunCreate(cli, &CreateOptions{
-		Name: name,
+		Name:                     name,
 		DefaultStackOrchestrator: orchestrator,
 		Description:              "description of " + name,
 		Kubernetes:               map[string]string{keyFromCurrent: "true"},
