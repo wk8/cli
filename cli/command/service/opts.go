@@ -756,10 +756,10 @@ func addServiceFlags(flags *pflag.FlagSet, opts *serviceOptions, defaultFlagValu
 	flags.Var(&opts.resources.resCPU, flagReserveCPU, "Reserve CPUs")
 	flags.Var(&opts.resources.resMemBytes, flagReserveMemory, "Reserve Memory")
 	flags.Int64Var(&opts.resources.swapBytes, flagSwapBytes, 0, "Amount of swap in bytes - can only be used together with a memory limit. Set to -1 to enable unlimited swap. The default behaviour is to make the swap space twice as big as the memory limit.")
-	// TODO wkpo
+	// FIXME: uncomment when/if https://github.com/moby/moby/pull/37872 gets merged
 	//flags.SetAnnotation(flagSwapBytes, "version", []string{"1.40"})
 	flags.Int64Var(&opts.resources.memorySwappiness, flagMemorySwappiness, 0, "Tune container memory swappiness (0 to 100) - if not specified, defaults to the container OS's default, generally 60")
-	// TODO wkpo
+	// FIXME: uncomment when/if https://github.com/moby/moby/pull/37872 gets merged
 	//flags.SetAnnotation(flagSwapBytes, "version", []string{"1.40"})
 
 	flags.Var(&opts.stopGrace, flagStopGracePeriod, flagDesc(flagStopGracePeriod, "Time to wait before force killing a container (ns|us|ms|s|m|h)"))

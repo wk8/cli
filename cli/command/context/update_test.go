@@ -14,9 +14,9 @@ func TestUpdateDescriptionOnly(t *testing.T) {
 	cli, cleanup := makeFakeCli(t)
 	defer cleanup()
 	err := RunCreate(cli, &CreateOptions{
-		Name:                     "test",
+		Name: "test",
 		DefaultStackOrchestrator: "swarm",
-		Docker:                   map[string]string{},
+		Docker: map[string]string{},
 	})
 	assert.NilError(t, err)
 	cli.OutBuffer().Reset()
@@ -61,13 +61,13 @@ func TestUpdateStackOrchestratorStrategy(t *testing.T) {
 	cli, cleanup := makeFakeCli(t)
 	defer cleanup()
 	err := RunCreate(cli, &CreateOptions{
-		Name:                     "test",
+		Name: "test",
 		DefaultStackOrchestrator: "swarm",
-		Docker:                   map[string]string{},
+		Docker: map[string]string{},
 	})
 	assert.NilError(t, err)
 	err = RunUpdate(cli, &UpdateOptions{
-		Name:                     "test",
+		Name: "test",
 		DefaultStackOrchestrator: "kubernetes",
 	})
 	assert.ErrorContains(t, err, `cannot specify orchestrator "kubernetes" without configuring a Kubernetes endpoint`)
