@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/go-units"
+	units "github.com/docker/go-units"
 	"github.com/pkg/errors"
 )
 
